@@ -1,101 +1,159 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { Search, Loader2, Volume2, VolumeX, Moon, Sun } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useTheme } from "next-themes";
+import { Skeleton } from "@/components/ui/skeleton";
+
+//! Mock API call
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const mockApiCall = (query: string) =>
+  new Promise((resolve) =>
+    setTimeout(
+      () =>
+        resolve({
+          audioUrl: "https://example.com/audio.mp3",
+          images: Array(7)
+            .fill(null)
+            .map((_, i) => `https://picsum.photos/400/300?random=${i}`),
+        }),
+      1000
+    )
+  );
+
+//! Final API Call:
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [audioUrl, setAudioUrl] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const { theme, setTheme } = useTheme();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    setIsLoading(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result: any = await mockApiCall(query);
+      setAudioUrl(result.audioUrl);
+      setImages(result.images);
+      setCurrentImageIndex(0);
+      if (audioRef.current) {
+        audioRef.current.play();
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      // Implement error handling here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [images]);
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-black/75 dark:to-black/75 flex flex-col items-center justify-center p-4 transition-colors duration-200">
+      <Card className="w-full max-w-md p-6 space-y-6 bg-white/80 dark:bg-black/25 dark:border dark:border-white/75 backdrop-blur-sm shadow-xl rounded-xl">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Music & Images
+          </h1>
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+        <form onSubmit={handleSearch} className="flex space-x-2">
+          <Input
+            type="text"
+            placeholder="Search for music..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-grow"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </Button>
+        </form>
+        {audioUrl && (
+          <div className="flex items-center space-x-2">
+            <audio ref={audioRef} src={audioUrl} className="w-full" controls />
+            <Button variant="ghost" size="icon" onClick={toggleMute}>
+              {isMuted ? (
+                <VolumeX className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {images.length > 0 ? (
+        <div className="mt-8 flex flex-row flex-wrap gap-4 justify-center items-center">
+          {images.map((image, index) => (
+            <Card
+              key={index}
+              className={`overflow-hidden transition-all duration-300 hover:scale-105 hover:z-10 hover:shadow-lg hover:brightness-100 ${
+                index === currentImageIndex ? "brightness-75" : "brightness-90"
+              }`}
+            >
+              <CardContent className="p-0">
+                <img
+                  src={image}
+                  alt={`Related to ${query}`}
+                  className="w-full h-48 object-cover"
+                />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <></>
+      )}
+
+      {isLoading && (
+        <div className="mt-8 flex flex-row flex-wrap gap-4 justify-center items-center">
+          {Array(7)
+            .fill(null)
+            .map((_, index) => (
+              <Skeleton key={index} />
+            ))}
+        </div>
+      )}
     </div>
   );
 }
