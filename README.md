@@ -1,5 +1,7 @@
 # Music Search Web Application
 
+### [API's not functionaly implemented yet but dynamic images show up on search]
+
 ## Overview
 
 This web application allows users to search for music and displays relevant audio along with images related to the search query. The application integrates with public APIs to fetch music audio and images, providing a seamless user experience.
